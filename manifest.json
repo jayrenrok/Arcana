@@ -1,0 +1,42 @@
+{
+  "name": "ARCANA — Divination Engine",
+  "short_name": "ARCANA",
+  "description": "Computational divination engine: Astromancy, Bazi, Numerology, Onomancy, Cleromancy, Palmistry & Face Reading with AI vision.",
+  "start_url": "./divination_engine.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#080810",
+  "theme_color": "#080810",
+  "categories": ["lifestyle", "utilities"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Palm Reading",
+      "short_name": "Palm",
+      "description": "Open palm OCR reader",
+      "url": "./divination_engine.html#palm",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Face Reading",
+      "short_name": "Face",
+      "description": "Open face OCR reader",
+      "url": "./divination_engine.html#face",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
