@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>ARCANA — Divination Engine</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#080810">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ARCANA">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600&family=Cinzel+Decorative:wght@400;700&display=swap');
+
+  :root {
+    --void: #080810;
+    --deep: #0d0d1a;
+    --surface: #12121f;
+    --panel: #18182a;
+    --border: #2a2a42;
+    --gold: #c9a84c;
+    --gold-dim: #8a6f32;
+    --gold-glow: #e8c878;
+    --silver: #9aa0b4;
+    --amethyst: #7b5ea7;
+    --amethyst-bright: #a87fd4;
+    --crimson: #c0392b;
+    --teal: #2d9b8a;
+    --text: #d8d4cc;
+    --text-dim: #7a7a9a;
+    --white: #f0eee8;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--void);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Stars background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 10% 20%, rgba(201,168,76,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 30% 70%, rgba(168,127,212,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 60% 15%, rgba(201,168,76,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 80% 55%, rgba(255,255,255,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 45% 85%, rgba(168,127,212,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 90% 30%, rgba(201,168,76,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 5% 90%, rgba(255,255,255,0.15) 0%, transparent 100%),
+      radial-gradient(1px 1px at 70% 80%, rgba(201,168,76,0.2) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    padding: 48px 24px 32px;
+    position: relative;
+    z-index: 1;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header-sigil {
+    font-size: 40px;
+    margin-bottom: 12px;
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 0.8; text-shadow: 0 0 20px var(--gold); }
+    50% { opacity: 1; text-shadow: 0 0 40px var(--gold), 0 0 80px var(--gold-dim); }
+  }
+
+  .header-title {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--gold);
+    text-shadow: 0 0 30px rgba(201,168,76,0.4);
+  }
+
+  .header-sub {
+    font-size: 11px;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-top: 8px;
+  }
+
+  /* Navigation tabs */
+  .nav {
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+    gap: 2px;
+    background: var(--deep);
+    border-bottom: 1px solid var(--border);
+    padding: 0 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .nav::-webkit-scrollbar { display: none; }
+
+  .nav-tab {
+    flex-shrink: 0;
+    padding: 14px 20px;
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+  }
+
+  .nav-tab:hover { color: var(--gold); }
+  .nav-tab.active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+  }
+
+  /* Main layout */
+  .main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 32px 16px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Sections */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* Cards */
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 28px;
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+  }
+
+  .card-title {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .card-title-icon { font-size: 18px; }
+
+  /* Form elements */
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+
+  .form-label {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .form-input, .form-select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+
+  .form-input:focus, .form-select:focus {
+    outline: none;
+    border-color: var(--gold-dim);
+  }
+
+  .form-select option { background: var(--deep); }
+
+  /* Buttons */
+  .btn {
+    padding: 12px 28px;
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.2s;
+    border: none;
+  }
+
+  .btn-gold {
+    background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+    color: var(--void);
+    font-weight: 600;
+  }
+
+  .btn-gold:hover {
+    background: linear-gradient(135deg, var(--gold), var(--gold-glow));
+    box-shadow: 0 4px 20px rgba(201,168,76,0.3);
+  }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--gold);
+    border: 1px solid var(--gold-dim);
+  }
+
+  .btn-outline:hover { background: rgba(201,168,76,0.1); }
+
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Results */
+  .result-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 24px;
+    margin-top: 20px;
+    display: none;
+  }
+
+  .result-box.visible { display: block; }
+
+  .result-section {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .result-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+  .result-label {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    margin-bottom: 8px;
+  }
+
+  .result-value {
+    font-family: 'Cinzel', serif;
+    font-size: 22px;
+    color: var(--gold);
+    margin-bottom: 6px;
+  }
+
+  .result-text {
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--silver);
+  }
+
+  .result-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .result-chip {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 10px 14px;
+    text-align: center;
+  }
+
+  .result-chip-label {
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+
+  .result-chip-val {
+    font-family: 'Cinzel', serif;
+    font-size: 18px;
+    color: var(--amethyst-bright);
+  }
+
+  /* Pillars (Bazi) */
+  .pillar-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .pillar {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 14px 10px;
+    text-align: center;
+  }
+
+  .pillar-name {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+  }
+
+  .pillar-stem {
+    font-family: 'Cinzel', serif;
+    font-size: 16px;
+    color: var(--gold);
+    margin-bottom: 4px;
+  }
+
+  .pillar-branch {
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    color: var(--amethyst-bright);
+  }
+
+  .pillar-element {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 6px;
+  }
+
+  /* Upload zone */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 4px;
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--surface);
+    position: relative;
+  }
+
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--gold-dim);
+    background: rgba(201,168,76,0.05);
+  }
+
+  .upload-zone input[type=file] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .upload-icon { font-size: 40px; margin-bottom: 12px; }
+
+  .upload-label {
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    color: var(--gold-dim);
+    margin-bottom: 6px;
+  }
+
+  .upload-sub { font-size: 11px; color: var(--text-dim); }
+
+  /* Image preview */
+  .img-preview {
+    max-width: 100%;
+    max-height: 280px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    display: none;
+    margin: 16px auto 0;
+    object-fit: contain;
+  }
+
+  .img-preview.visible { display: block; }
+
+  /* Loading */
+  .loading {
+    display: none;
+    text-align: center;
+    padding: 32px;
+    color: var(--text-dim);
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .loading.visible { display: block; }
+
+  .spinner {
+    width: 36px;
+    height: 36px;
+    border: 2px solid var(--border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Element bars */
+  .element-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .element-name {
+    font-size: 11px;
+    width: 60px;
+    color: var(--silver);
+    flex-shrink: 0;
+  }
+
+  .element-track {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .element-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.6s ease;
+  }
+
+  .element-count {
+    font-size: 11px;
+    color: var(--text-dim);
+    width: 20px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* Section intro */
+  .section-intro {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    line-height: 1.7;
+    margin-bottom: 24px;
+    padding: 16px 20px;
+    border-left: 2px solid var(--gold-dim);
+    background: rgba(201,168,76,0.04);
+  }
+
+  /* Error */
+  .error-msg {
+    background: rgba(192,57,43,0.1);
+    border: 1px solid rgba(192,57,43,0.3);
+    border-radius: 3px;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: #e07060;
+    margin-top: 12px;
+    display: none;
+  }
+
+  .error-msg.visible { display: block; }
+
+  /* Divider */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 24px 0;
+    color: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Textarea */
+  .form-textarea {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    line-height: 1.6;
+    resize: vertical;
+    width: 100%;
+    min-height: 80px;
+    transition: border-color 0.2s;
+  }
+
+  .form-textarea:focus { outline: none; border-color: var(--gold-dim); }
+
+  /* Info tooltip */
+  .info-badge {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background: var(--border);
+    border-radius: 50%;
+    font-size: 9px;
+    text-align: center;
+    line-height: 16px;
+    color: var(--text-dim);
+    cursor: help;
+    vertical-align: middle;
+    margin-left: 4px;
+  }
+
+  /* Scroll reveal animation */
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-box.visible { animation: fade-up 0.3s ease; }
+
+  /* Report section cards */
+  .report-section-card { animation: fade-up 0.4s ease both; }
+  .report-section-card + .report-section-card { margin-top: 20px; }
+
+  /* Report body text */
+  .report-body { font-size: 13.5px; line-height: 1.85; color: var(--text); }
+  .rp { margin: 0 0 12px 0; }
+  .rh { color: var(--gold-dim); font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; display: block; margin: 16px 0 6px; }
+  .rb { display: flex; gap: 10px; margin-bottom: 7px; padding-left: 4px; }
+  .rb::before { content: '✦'; color: var(--gold-dim); flex-shrink: 0; font-size: 10px; margin-top: 2px; }
+
+  /* Skeleton loader */
+  .report-skeleton { padding: 8px 0; }
+  .skeleton-line {
+    height: 12px;
+    background: linear-gradient(90deg, var(--border) 25%, var(--surface) 50%, var(--border) 75%);
+    background-size: 200% 100%;
+    border-radius: 2px;
+    margin-bottom: 10px;
+    animation: shimmer 1.4s infinite;
+  }
+  @keyframes shimmer { to { background-position: -200% 0; } }
+
+
+
+  /* Mobile tweaks */
+  @media (max-width: 600px) {
+    .pillar-grid { grid-template-columns: repeat(2, 1fr); }
+    .form-grid { grid-template-columns: 1fr; }
+    .card { padding: 20px 16px; }
+    .pillar-stem { font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-sigil">☽ ✦ ☾</div>
+  <div class="header-title">ARCANA</div>
+  <div class="header-sub">Computational Divination Engine · v1.0</div>
+</div>
+
+<nav class="nav">
+  <button class="nav-tab active" onclick="showSection('astro',this)">⭐ Astromancy</button>
+  <button class="nav-tab" onclick="showSection('bazi',this)">☯ Bazi · 四柱</button>
+  <button class="nav-tab" onclick="showSection('numerology',this)">∑ Numerology</button>
+  <button class="nav-tab" onclick="showSection('onomancy',this)">Ω Onomancy</button>
+  <button class="nav-tab" onclick="showSection('cleromancy',this)">⚄ Cleromancy</button>
+  <button class="nav-tab" onclick="showSection('palm',this)">✋ Palmistry OCR</button>
+  <button class="nav-tab" onclick="showSection('face',this)">👁 Face Reading OCR</button>
+</nav>
+
+
+
+<div class="main">
+
+  <!-- ═══════════════════ ASTROMANCY ═══════════════════ -->
+  <div class="section active" id="sec-astro">
+    <p class="section-intro">Western Tropical Astrology — Natal chart computation from birth coordinates. Calculates Sun sign, Moon sign, Ascendant, and dominant aspect patterns from precise datetime and location inputs.</p>
+
+    <div class="card">
+      <div class="card-title"><span class="card-title-icon">⭐</span> Natal Chart Engine</div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Birth Date</label>
+          <input type="date" id="astro-date" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Birth Time</label>
+          <input type="time" id="astro-time" class="form-input" value="12:00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Birth City / Country</label>
+          <input type="text" id="astro-city" class="form-input" placeholder="e.g. Penang, Malaysia">
+        </div>
+        <div class="form-group">
+          <label class="form-label">System</label>
+          <select id="astro-system" class="form-select">
+            <option value="western">Western Tropical</option>
+            <option value="jyotish">Vedic Jyotish (Sidereal)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:20px">
+        <label class="form-label">Your Question / Focus Area (optional)</label>
+        <textarea id="astro-question" class="form-textarea" placeholder="e.g. Career prospects this year, relationship outlook..."></textarea>
+      </div>
+
+      <button class="btn btn-gold" onclick="runAstro()">Cast Chart ✦</button>
+
+      <div class="loading" id="astro-loading"><div class="spinner"></div>Computing celestial positions…</div>
+      <div class="error-msg" id="astro-error"></div>
+      <div class="result-box" id="astro-result"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ BAZI ═══════════════════ -->
+  <div class="section" id="sec-bazi">
+    <p class="section-intro">四柱命理 — Enter your birth data once. The engine computes your full Four Pillars chart, then generates a comprehensive AI master report covering all five analysis dimensions in sequence.</p>
+
+    <!-- INPUT CARD -->
+    <div class="card" id="bazi-input-card">
+      <div class="card-title"><span class="card-title-icon">☯</span> Birth Data · Four Pillars Engine</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Birth Date</label>
+          <input type="date" id="bazi-date" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Birth Time</label>
+          <input type="time" id="bazi-time" class="form-input" value="12:00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Gender</label>
+          <select id="bazi-gender" class="form-select">
+            <option value="M">Male (Yang)</option>
+            <option value="F">Female (Yin)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Name (optional)</label>
+          <input type="text" id="bazi-name" class="form-input" placeholder="Your name">
+        </div>
+      </div>
+
+      <!-- Compatibility person (optional) -->
+      <div style="margin-top:4px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+          <span style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-dim)">Compatibility (optional)</span>
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Second Person Name</label>
+            <input type="text" id="bazi-compat-name" class="form-input" placeholder="Leave blank to skip">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Second Person Birth Date</label>
+            <input type="date" id="bazi-compat-date" class="form-input">
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-gold" onclick="runBaziMasterReport()" id="bazi-run-btn">
+        Generate Master Report ✦
+      </button>
+      <div style="font-size:10px;color:var(--text-dim);margin-top:10px;letter-spacing:0.05em">
+        Computes chart · Day Master · Five Archetypes · 10-Year Macro Cycles · Compatibility · Full Chart Analysis
+      </div>
+
+      <div class="loading" id="bazi-loading"><div class="spinner"></div>
+        <div id="bazi-loading-text">Computing Four Pillars…</div>
+      </div>
+      <div class="error-msg" id="bazi-error"></div>
+    </div>
+
+    <!-- COMPUTED CHART (shown immediately, client-side) -->
+    <div id="bazi-chart-display" style="display:none">
+      <div class="card">
+        <div class="card-title"><span class="card-title-icon">八字</span> Four Pillars Chart</div>
+        <div id="bazi-chart-inner"></div>
+      </div>
+    </div>
