@@ -657,21 +657,20 @@
 </div>
 
 <nav class="nav">
-  <button class="nav-tab active" onclick="showSection('astro')">⭐ Astromancy</button>
-  <button class="nav-tab" onclick="showSection('bazi')">☯ Bazi · 四柱</button>
-  <button class="nav-tab" onclick="showSection('numerology')">∑ Numerology</button>
-  <button class="nav-tab" onclick="showSection('onomancy')">Ω Onomancy</button>
-  <button class="nav-tab" onclick="showSection('cleromancy')">⚄ Cleromancy</button>
-  <button class="nav-tab" onclick="showSection('palm')">✋ Palmistry OCR</button>
-  <button class="nav-tab" onclick="showSection('face')">👁 Face Reading OCR</button>
+  <button class="nav-tab active" onclick="showSection('astro',this)">⭐ Astromancy</button>
+  <button class="nav-tab" onclick="showSection('bazi',this)">☯ Bazi · 四柱</button>
+  <button class="nav-tab" onclick="showSection('numerology',this)">∑ Numerology</button>
+  <button class="nav-tab" onclick="showSection('onomancy',this)">Ω Onomancy</button>
+  <button class="nav-tab" onclick="showSection('cleromancy',this)">⚄ Cleromancy</button>
+  <button class="nav-tab" onclick="showSection('palm',this)">✋ Palmistry OCR</button>
+  <button class="nav-tab" onclick="showSection('face',this)">👁 Face Reading OCR</button>
 </nav>
 
 <!-- API KEY BAR -->
 <div class="apikey-bar">
   <label>API Key</label>
   <input type="password" class="apikey-input" id="apikey-input"
-    placeholder="sk-ant-api03-…  (your Anthropic API key)"
-    oninput="saveApiKey(this.value)">
+    placeholder="sk-ant-api03-…  (your Anthropic API key)">
   <span class="apikey-status" id="apikey-status">○ Not set</span>
 </div>
 
@@ -1024,24 +1023,33 @@ function requireApiKey(errEl) {
   return key;
 }
 
-// Restore key from sessionStorage on load
+// Restore key from sessionStorage on load + wire input listener
 window.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('apikey-input');
+  const status = document.getElementById('apikey-status');
+
+  // Wire input event (more reliable than inline oninput on Android)
+  input.addEventListener('input', () => saveApiKey(input.value));
+  input.addEventListener('change', () => saveApiKey(input.value));
+  input.addEventListener('paste', () => setTimeout(() => saveApiKey(input.value), 50));
+
+  // Restore saved key
   const stored = sessionStorage.getItem('arcana_apikey');
   if (stored) {
-    document.getElementById('apikey-input').value = stored;
-    document.getElementById('apikey-status').textContent = '✦ Set';
-    document.getElementById('apikey-status').style.color = 'var(--gold)';
+    input.value = stored;
+    status.textContent = '✦ Set';
+    status.style.color = 'var(--gold)';
   }
 });
 
 // ══════════════════════════════════════════════
 // NAVIGATION
 // ══════════════════════════════════════════════
-function showSection(id) {
+function showSection(id, btn) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('sec-' + id).classList.add('active');
-  event.currentTarget.classList.add('active');
+  if (btn) btn.classList.add('active');
 }
 
 // ══════════════════════════════════════════════
@@ -2072,14 +2080,4 @@ function renderChartInline(p, counts, dmKey, dm, dmEl) {
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
       <div class="result-chip"><div class="result-chip-label">Day Master</div><div style="font-size:12px;color:${EL_COLORS[dmEl]};font-family:Cinzel,serif">${dm.symbol}</div><div style="font-size:10px;color:var(--silver)">${dm.name}</div></div>
       <div class="result-chip"><div class="result-chip-label">Useful God</div><div style="font-size:14px;font-family:Cinzel,serif;color:${EL_COLORS[usefulGod]}">${usefulGod}</div></div>
-      <div class="result-chip"><div class="result-chip-label">Absent</div><div style="font-size:14px;font-family:Cinzel,serif;color:${EL_COLORS[absent]}">${absent}</div></div>
-    </div>`;
-}
-
-// ── Report markdown formatter ────────────────
-function formatReportMarkdown(text) {
-  return text
-    // Bold section sub-headers like **Career Architecture**:
-    .replace(/\*\*([^*]+)\*\*/g, '<strong class="rh">$1</strong>')
-    // Italics
-    .replace(/\*([^*]+)\*/g, '<em style="co
+      <div class="result-chip"><div class="result-chip-label">Absent</div><div style="font-size:14px;font-family:Cinzel,serif;color:$
